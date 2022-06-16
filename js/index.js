@@ -17,8 +17,6 @@ class Moveset
 // Sprite class for all moving objects.
 class Sprite 
 {
-    // isAirborne;
-    // lastKey;
     constructor({position, drawData, velocity})
     {
         this.position = position;
@@ -27,10 +25,17 @@ class Sprite
         this.isAirborne;
         this.lastKey;
 
+        this.attackingRight;
+        this.attackingLeft;
+        //horizontal attacks.
         this.rightAtk = {
             position: this.position,
             width: 50,
             height: 25
+        };
+        this.rightOffset = {
+            x: this.drawData.width,
+            y: (this.drawData.height / 3)
         };
 
         this.leftAtk = {
@@ -38,27 +43,35 @@ class Sprite
             width: 50,
             height: 25
         };
+        this.leftOffset = {
+            x: this.leftAtk.width,
+            y: (this.drawData.height / 3)
+        };
+
 
     }
 
     attackRight()
     {
-        let offset = {
-            x: this.drawData.width,
-            y: (this.drawData.height / 3)
-        };
+        this.attackingRight = true;
+        setTimeout(() => {
+            this.attackingRight = false;
+        }, 100);
+
         c.fillStyle = 'red';
-        c.fillRect(this.rightAtk.position.x + offset.x, this.rightAtk.position.y + offset.y, this.rightAtk.width, this.rightAtk.height);
+        c.fillRect(this.rightAtk.position.x + this.rightOffset.x, this.rightAtk.position.y + this.rightOffset.y, this.rightAtk.width, this.rightAtk.height);
     }
 
     attackLeft()
     {
-        let offset = {
-            x: this.leftAtk.width,
-            y: (this.drawData.height / 3)
-        };
+        this.attackingLeft = true;
+        setTimeout(() => {
+            this.attackingLeft = false;
+        }, 100);
+
+        this.attackingLeft = true;
         c.fillStyle = 'red';
-        c.fillRect(this.leftAtk.position.x - offset.x, this.leftAtk.position.y + offset.y, this.leftAtk.width, this.leftAtk.height);
+        c.fillRect(this.leftAtk.position.x - this.leftOffset.x, this.leftAtk.position.y + this.leftOffset.y, this.leftAtk.width, this.leftAtk.height);
     }
 
 
@@ -66,11 +79,6 @@ class Sprite
     {
         c.fillStyle = this.drawData.color;
         c.fillRect(this.position.x, this.position.y, this.drawData.width, this.drawData.height);
-        
-
-        // c.fillStyle = 'blue';
-        // c.fillRect(this.leftAtk.position.x, this.leftAtk.position.y, this.leftAtk.width, this.leftAtk.height);
-
     }
 
     update()
@@ -91,16 +99,6 @@ class Sprite
             this.velocity.y += gravity; 
         }
 
-        // Create Horizontal wrap around. 
-        // if(this.position.x + this.drawData.width + this.velocity.x >= canvas.width)   
-        // {
-        //     this.position.x = 0;                                                      
-        // } 
-        // else if (this.position.x + this.velocity.x <= 0)
-        // {
-        //     this.position.x = canvas.width - this.drawData.width; 
-        // }
-
         // Create horizontal wall boundarys and restrict movement.
         if((this.position.x + this.drawData.width + this.velocity.x >= canvas.width) && this.velocity.x > 0)   
         {
@@ -110,10 +108,7 @@ class Sprite
         {
             this.position.x = 5; 
         }
-
-
         this.position.x += this.velocity.x;
-
     }
 }
 
@@ -142,6 +137,84 @@ function spriteJump(sprite, jumpVelocity){
 function gameStart()
 {
     loop();
+}
+
+function loop()
+{
+    window.requestAnimationFrame(loop); //animate the frames by clearing the rectangle and updating the player / enemy.
+    //console.log(player.position.x);
+    refreshCanvas();      
+    player.update();
+    enemy.update();
+
+    player.velocity.x = 0;  // default.
+    enemy.velocity.x = 0;
+
+    // Player movement
+    if(controller.a.pressed && player.lastKey === 'a')
+    {
+        player.velocity.x = -5
+    }
+    else if (controller.d.pressed && player.lastKey === 'd')
+    {
+        player.velocity.x = 5;
+    }
+
+    // Enemy movement
+    if(controller.ArrowLeft.pressed && enemy.lastKey === 'ArrowLeft')
+    {
+        enemy.velocity.x = -5
+    }
+    else if (controller.ArrowRight.pressed && enemy.lastKey  === 'ArrowRight')
+    {
+        enemy.velocity.x = 5;
+    }
+
+    //BATTLE
+    if(controller.y.pressed) 
+    { 
+        player.attackRight();
+        if(player.rightAtk.position.x + player.rightOffset.x + player.rightAtk.width >= enemy.position.x    &&  // right side of attack crosses left side of enemy.
+            player.rightAtk.position.x + player.rightOffset.x <= enemy.position.x + enemy.drawData.width    &&  // left side of attack less than right side of enemy.
+            player.rightAtk.position.y + player.rightOffset.y + player.rightAtk.height >= enemy.position.y  &&  // bottom of attack is under top of enemy.
+            player.rightAtk.position.y + player.rightOffset.y <= enemy.position.y + enemy.drawData.height   )   // top of attack is above bottom of enemy.
+        {
+            console.log("purple right attack hit");
+        }
+    };
+    if(controller.t.pressed)
+    {
+        player.attackLeft();
+        if(player.leftAtk.position.x - player.leftOffset.x <= enemy.position.x + enemy.drawData.width       &&  //left side of attack >= right side enemy.
+            player.leftAtk.position.x >= enemy.position.x                                                   &&  //right side of attack <= left side of enemy.
+            player.leftAtk.position.y + player.leftOffset.y + player.leftAtk.height >= enemy.position.y     &&  // bottom of attack below top of enemy.
+            player.leftAtk.position.y + player.leftOffset.y <= enemy.position.y + enemy.drawData.height     )   //top of attack above bottom of enemy.
+        { 
+            console.log("purple left attack hit");
+        }
+    };
+    if(controller.two.pressed) 
+    { 
+        enemy.attackRight();
+        if(enemy.rightAtk.position.x + enemy.rightOffset.x + enemy.rightAtk.width >= player.position.x      &&  // right side of attack crosses left side of enemy.
+            enemy.rightAtk.position.x + enemy.rightOffset.x <= player.position.x + player.drawData.width    &&  // left side of attack less than right side of enemy.
+            enemy.rightAtk.position.y + enemy.rightOffset.y + enemy.rightAtk.height >= player.position.y    &&  // bottom of attack is under top of enemy.
+            enemy.rightAtk.position.y + enemy.rightOffset.y <= player.position.y + player.drawData.height   )   // top of attack is above bottom of enemy.
+        {
+            console.log("green right attack hit");
+        }
+    };
+    if(controller.one.pressed) 
+    { 
+        enemy.attackLeft();
+        if(enemy.leftAtk.position.x - enemy.leftOffset.x <= player.position.x + player.drawData.width       &&  //left side of attack >= right side enemy.
+            enemy.leftAtk.position.x >= player.position.x                                                   &&  //right side of attack <= left side of enemy.
+            enemy.leftAtk.position.y + enemy.leftOffset.y + enemy.leftAtk.height >= player.position.y       &&  // bottom of attack below top of enemy.
+            enemy.leftAtk.position.y + enemy.leftOffset.y <= player.position.y + player.drawData.height     )   //top of attack above bottom of enemy.
+        { 
+            console.log("green left attack hit");
+        }
+    };
 }
 
 const controller = {
@@ -179,44 +252,6 @@ const controller = {
         pressed: false
     }
     
-}
-
-function loop()
-{
-    window.requestAnimationFrame(loop); //animate the frames by clearing the rectangle and updating the player / enemy.
-    //console.log(player.position.x);
-    refreshCanvas();      
-    player.update();
-    enemy.update();
-
-    player.velocity.x = 0;  // default.
-    enemy.velocity.x = 0;
-
-    // Player movement
-    if(controller.a.pressed && player.lastKey === 'a')
-    {
-        player.velocity.x = -5
-    }
-    else if (controller.d.pressed && player.lastKey === 'd')
-    {
-        player.velocity.x = 5;
-    }
-
-    // Enemy movement
-    if(controller.ArrowLeft.pressed && enemy.lastKey === 'ArrowLeft')
-    {
-        enemy.velocity.x = -5
-    }
-    else if (controller.ArrowRight.pressed && enemy.lastKey  === 'ArrowRight')
-    {
-        enemy.velocity.x = 5;
-    }
-
-    //BATTLE
-    if(controller.y.pressed) { player.attackRight() };
-    if(controller.t.pressed) { player.attackLeft() };
-    if(controller.two.pressed) { enemy.attackRight() };
-    if(controller.one.pressed) { enemy.attackLeft() };
 }
 
 window.addEventListener('keydown', (event) => {
