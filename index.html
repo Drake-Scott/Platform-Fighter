@@ -3,10 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <!-- <link rel="stylesheet" href="css/index.css"> -->
-    <title>Ivan's Grand Quest</title>
+    <title>YEOWCH!</title>
 <body>
-    <div class="canvasContainer">
-        <button id="startBtn" onclick="gameStart()"> Start </button>
+    <div><button id="startBtn" onclick="gameStart()"> Start </button></div>
+    <div style="background-color: black; height: fit-content; width: fit-content; color: azure; margin: 15px;"> P1 CONTROLS: WASD, y & t. <br> P2 CONTROLS: Arrow Keys, numpad 1 & 2 </div>
+
+    <div style="position: relative; display: inline-block;">
+        <div style="position: absolute; display: flex; width: 100%;">
+            <!-- player1 percent -->
+            <div id="purplePercent" style="background-color: #CF67EE; color: white; height: 30px; width: 100%"></div>
+            <!-- player2 percent -->
+            <div id="greenPercent" style="background-color:  #41D474; color: white; height: 30px; width: 100%;"></div>
+        </div>
+        
         <canvas></canvas>
     </div> 
 </body>
